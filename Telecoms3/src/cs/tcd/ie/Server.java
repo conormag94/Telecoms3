@@ -57,7 +57,10 @@ public class Server extends Node {
 		try {					
 			Terminal terminal= new Terminal("Server");
 			(new Server(terminal, DEFAULT_PORT)).start();
+			//Terminal terminal2= new Terminal("Server");
+			//(new Server(terminal2, 50002)).start();
 			terminal.println("Program completed");
+
 		} catch(java.lang.Exception e) {e.printStackTrace();}
 	}
 }

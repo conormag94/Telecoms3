@@ -6,8 +6,10 @@ package cs.tcd.ie;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 
 import tcdIO.*;
 
@@ -53,6 +55,21 @@ public class Client extends Node {
 		terminal.println(content.toString());
 	}
 
+	public static String[] splitFile(byte[] buffer){
+		String[] result = new String[10];
+		
+		for(int i = 0; i < 10; i++){
+			String info = "";
+			
+			for(int j = 0; j < 100; j++){
+				info += (char)buffer[j];
+			}
+			
+			result[i] = info;
+		}
+			
+		return result;
+	}
 	
 	/**
 	 * Sender Method
@@ -60,26 +77,55 @@ public class Client extends Node {
 	 */
 	public synchronized void start() throws Exception {
 		String fname;
-		File file= null;
+
 		FileInputStream fin= null;
 		
 		FileInfoContent fcontent;
 		
-		int size;
+		int size = 0;
 		byte[] buffer= null;
 		DatagramPacket packet= null;
 		
 		fname= terminal.readString("Name of file: ");
+		
+		BufferedReader reader = null;
+		File file = null;
+		
+		//Reading in files line by line
+		try{
+			file= new File(fname);				// Reserve buffer for length of file and read file
+			reader = new BufferedReader(new FileReader(file));
+			
+			int numOfLines =0;
+			String line = reader.readLine();
+			while (line != null){
+				numOfLines++;
+				line = reader.readLine();
+			}
+			reader = new BufferedReader(new FileReader(file));
+			line = reader.readLine();
 
-		file= new File(fname);				// Reserve buffer for length of file and read file
-		buffer= new byte[(int) file.length()];
-		fin= new FileInputStream(file);
-		size= fin.read(buffer);
-		if (size==-1) {
-			fin.close();
-			throw new Exception("Problem with File Access");
+			String[] chunks = new String[numOfLines/10];
+			
+			String testString = "";
+			int count = 0;
+			while (line != null && count < 10){
+				System.out.println(line);
+				testString += line + ",";
+				line = reader.readLine();
+				count++;
+			}
+			System.out.println(testString);
+			
+			if(testString.contains("chris smith,"))
+				System.out.print("Dicks");		
+			
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		terminal.println("File size: " + buffer.length);
+		
+
+		//terminal.println("File size: " + buffer.length);
 
 		fcontent= new FileInfoContent(fname, size);
 		
@@ -100,7 +146,7 @@ public class Client extends Node {
 	 */
 	public static void main(String[] args) {
 		try {					
-			Terminal terminal= new Terminal("Client");		
+			Terminal terminal= new Terminal("Coordinator");		
 			(new Client(terminal, DEFAULT_DST_NODE, DEFAULT_DST_PORT, DEFAULT_SRC_PORT)).start();
 			terminal.println("Program completed");
 		} catch(java.lang.Exception e) {e.printStackTrace();}
