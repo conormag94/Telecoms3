@@ -6,10 +6,7 @@ package cs.tcd.ie;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
+import java.io.*;
 
 import tcdIO.*;
 
@@ -28,6 +25,8 @@ public class Client extends Node {
 	static final int DEFAULT_DST_PORT = 50001;
 	static final String DEFAULT_DST_NODE = "localhost";	
 	
+	static final int LINES_PER_CHUNK = 5000;
+	static final int CHAR_LIMIT = 70;
 	Terminal terminal;
 	InetSocketAddress dstAddress;
 	
@@ -56,8 +55,24 @@ public class Client extends Node {
 		terminal.println(content.toString());
 	}
 
-	public static String[] splitFile(byte[] buffer){
-		String[] result = new String[10];
+	public String[] splitFile(File inputFile) throws IOException{
+		File in = inputFile;
+		BufferedReader reader = new BufferedReader(new FileReader(in));
+		
+		String[] parts = null;
+		
+		String[] chunks = null;
+		String line = reader.readLine();
+		//Big enough to hold 5000 lines (LINES_PER_CHUNK) of 70 chars each (CHAR_LIMIT)
+		StringBuilder sb = new StringBuilder(LINES_PER_CHUNK * CHAR_LIMIT); 
+		
+		while(line != null){
+			
+		}
+		reader.close();
+		return parts;
+		/*
+		String[] chunks = new String[10];
 		
 		for(int i = 0; i < 10; i++){
 			String info = "";
@@ -66,10 +81,11 @@ public class Client extends Node {
 				info += (char)buffer[j];
 			}
 			
-			result[i] = info;
+			chunks[i] = info;
 		}
 			
-		return result;
+		return chunks;
+		*/
 	}
 	
 	/**
@@ -80,7 +96,6 @@ public class Client extends Node {
 		String fname;
 
 		FileInputStream fin= null;
-		
 		FileInfoContent fcontent;
 		
 		int size = 0;
@@ -91,10 +106,12 @@ public class Client extends Node {
 		
 		BufferedReader reader = null;
 		File file = null;
-		
+
 		//Reading in files line by line
 		try{
-			file= new File(fname);				// Reserve buffer for length of file and read file
+			file= new File(fname);	
+			String[] chunks = splitFile(file);
+			// Reserve buffer for length of file and read file
 			reader = new BufferedReader(new FileReader(file));
 			
 			int numOfLines =0;
@@ -106,7 +123,7 @@ public class Client extends Node {
 			reader = new BufferedReader(new FileReader(file));
 			line = reader.readLine();
 
-			String[] chunks = new String[numOfLines/10];
+			//String[] chunks = new String[numOfLines/10];
 			
 			String testString = "";
 			int count = 0;
@@ -136,7 +153,7 @@ public class Client extends Node {
 		socket.send(packet);
 		terminal.println("Packet sent");
 		this.wait();
-		fin.close();
+		//fin.close();
 	}
 
 
