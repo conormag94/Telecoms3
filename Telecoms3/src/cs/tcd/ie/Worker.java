@@ -5,7 +5,7 @@ import java.net.DatagramSocket;
 
 import tcdIO.Terminal;
 
-public class Server extends Node {
+public class Worker extends Node {
 	static final int DEFAULT_PORT = 50001;
 
 	Terminal terminal;
@@ -13,7 +13,7 @@ public class Server extends Node {
 	/*
 	 * 
 	 */
-	Server(Terminal terminal, int port) {
+	Worker(Terminal terminal, int port) {
 		try {
 			this.terminal= terminal;
 			socket= new DatagramSocket(port);
@@ -73,7 +73,7 @@ public class Server extends Node {
 	public static void main(String[] args) {
 		try {					
 			Terminal terminal= new Terminal("Worker");
-			(new Server(terminal, DEFAULT_PORT)).start();
+			(new Worker(terminal, DEFAULT_PORT)).start();
 			terminal.println("Program completed");
 		} catch(java.lang.Exception e) {e.printStackTrace();}
 	}
