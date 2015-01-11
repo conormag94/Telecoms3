@@ -12,12 +12,12 @@ import tcdIO.*;
 
 /**
  *
- * Client class
+ * Coordinator class
  * 
  * An instance accepts user input 
  *
  */
-public class Client extends Node {
+public class Coordinator extends Node {
 	static final int DEFAULT_SRC_PORT = 50000;
 	static final int DEFAULT_DST_PORT = 50001;
 	static final String DEFAULT_DST_NODE = "localhost";	
@@ -28,10 +28,11 @@ public class Client extends Node {
 	
 	/**
 	 * Constructor
+	 * 
 	 * 	 
 	 * Attempts to create socket at given port and create an InetSocketAddress for the destinations
 	 */
-	Client(Terminal terminal, String dstHost, int dstPort, int srcPort) {
+	Coordinator(Terminal terminal, String dstHost, int dstPort, int srcPort) {
 		try {
 			this.terminal= terminal;
 			dstAddress= new InetSocketAddress(dstHost, dstPort);
@@ -127,7 +128,7 @@ public class Client extends Node {
 	public static void main(String[] args) {
 		try {					
 			Terminal terminal= new Terminal("Coordinator");		
-			(new Client(terminal, DEFAULT_DST_NODE, DEFAULT_DST_PORT, DEFAULT_SRC_PORT)).start();
+			(new Coordinator(terminal, DEFAULT_DST_NODE, DEFAULT_DST_PORT, DEFAULT_SRC_PORT)).start();
 			terminal.println("Program completed");
 		} catch(java.lang.Exception e) {e.printStackTrace();}
 	}
