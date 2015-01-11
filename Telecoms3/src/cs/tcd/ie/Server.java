@@ -34,22 +34,24 @@ public class Server extends Node {
 			
 			if(content.getType()==PacketContent.FILEINFO){
 				String namesList = content.toString();
-				System.out.println(namesList);
+
 				String name = ((FileInfoContent)content).getName();
-				System.out.println(name);
+
 				terminal.println("Finding name: " + name);
 				boolean nameFound;
 				nameFound = findName(namesList, name);
 				if(nameFound == true){
 					System.out.println(name + " found!");
+					terminal.println(name + " found!");
 				}
 				else if(nameFound == false){
 					System.out.println(name + " not found");
+					terminal.println(name + " not found");
 				}				
 				//Receipt acknowledgment
 				//TODO: Add ack packet of whether or not the name was found
 				DatagramPacket response;
-				response = new AckPacketContent("OK - Received this").toDatagramPacket();
+				response = new AckPacketContent("Finding name: " + name).toDatagramPacket();
 				response.setSocketAddress(packet.getSocketAddress());
 				socket.send(response);
 			}
@@ -59,21 +61,15 @@ public class Server extends Node {
 	
 	public boolean findName(String namesList, String nameToFind){
 		String tokenizedName = nameToFind + ",";
-		if(namesList.contains(tokenizedName))
-			return true;
-		else
-			return false;
+		
+		return(namesList.contains(tokenizedName));
 	}
 
-	
 	public synchronized void start() throws Exception {
 		terminal.println("Waiting for contact");
 		this.wait();
 	}
-	
-	/*
-	 * 
-	 */
+
 	public static void main(String[] args) {
 		try {					
 			Terminal terminal= new Terminal("Worker");

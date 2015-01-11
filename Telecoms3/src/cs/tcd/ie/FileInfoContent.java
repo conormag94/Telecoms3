@@ -5,10 +5,10 @@ import java.io.ObjectOutputStream;
 
 /**
  * Class for packet content that represents file information
- * TODO: Delete stefan's old code which is commented out
+ * TODO: Once class is completed, delete stefan's old commented out code
  */
 public class FileInfoContent extends PacketContent {
-	
+	//TODO: Maybe use filename variable to identify big or small file
 	String filename;
 	int size;
 	
