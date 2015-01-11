@@ -54,37 +54,6 @@ public class Client extends Node {
 		
 		terminal.println(content.toString());
 	}
-
-	public String[] splitFile(File inputFile) throws IOException{
-		File in = inputFile;
-		BufferedReader reader = new BufferedReader(new FileReader(in));
-		//Big enough to hold 5000 lines (LINES_PER_CHUNK) of 50 chars each (CHAR_LIMIT)
-		//just in case of very long names
-		StringBuilder sb = new StringBuilder(LINES_PER_CHUNK * CHAR_LIMIT); 
-		
-		String[] chunks = new String[5];
-		String line;
-		int linesRead = 0;
-		int i = 0;
-		while((line = reader.readLine()) != null){
-			linesRead+=1;
-			System.out.println(line + ": " + (i*2000 + linesRead));
-			
-			sb.append(line.toLowerCase() + ",");
-			
-			if(linesRead == LINES_PER_CHUNK){
-				linesRead = 0;
-				chunks[i] = sb.toString();
-				sb = new StringBuilder(LINES_PER_CHUNK * CHAR_LIMIT);
-				System.out.println("==========");
-				i+=1;
-			}
-		}
-		
-		reader.close();
-		return chunks;
-
-	}
 	
 	/**
 	 * Sender Method
@@ -93,34 +62,41 @@ public class Client extends Node {
 	 */
 	public synchronized void start() throws Exception {
 		String fname;
+		String[] chunks = null;
 
 		FileInputStream fin= null;
-		FileInfoContent fcontent;
+		//FileInfoContent fcontent;
 		
 		int size = 0;
 		byte[] buffer= null;
-		DatagramPacket packet= null;
+		//DatagramPacket packet= null;
 		
 		fname= terminal.readString("Name of file: ");
-		
-		BufferedReader reader = null;
 		File file = null;
 
-		//Reading in files line by line
 		try{
 			file= new File(fname);	
-			String[] chunks = splitFile(file);
-			// Reserve buffer for length of file and read file
-
+			chunks = splitFile(file);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 		
-
-		//terminal.println("File size: " + buffer.length);
-
-		fcontent= new FileInfoContent(fname, size);
+		String testName = "john smith";
+		FileInfoContent fcontent = new FileInfoContent(chunks[0], testName);
+		DatagramPacket packet;
+		terminal.println("Sending packet:");
+		packet = fcontent.toDatagramPacket();
+		packet.setSocketAddress(dstAddress);
+		socket.send(packet);
+		terminal.println("Packet sent");
 		
+		this.wait();
+		fin.close();
+		/**
+		 * Weber's old code
+		 */
+		/*terminal.println("File size: " + buffer.length);
+		fcontent= new FileInfoContent(fname, size);
 		terminal.println("Sending packet w/ name & length"); // Send packet with file name and length
 		packet= fcontent.toDatagramPacket();
 		packet.setSocketAddress(dstAddress);
@@ -128,6 +104,48 @@ public class Client extends Node {
 		terminal.println("Packet sent");
 		this.wait();
 		//fin.close();
+		 */
+		 
+	}
+	/** 
+	 * @param  inputFile - Text File to split (names-short.txt)
+	 * @return chunks    - String array containing file split into 5 chunks
+	 * @throws IOException
+	 * 
+	 * NOTE:
+	 * ====
+	 * We separate the names by commas in the chunks to avoid partial matches
+	 * If we searched for "john williams" and the name "john williamson" was there,
+	 * this would give us a false match as "john williamson" contains "john williams"
+	 * So "john williamson" becomes "john williamson,"
+	 * and "john williams" becomes "john williams,".
+	 * This fixes the problem
+	 */
+	public String[] splitFile(File inputFile) throws IOException{
+		File in = inputFile;
+		BufferedReader reader = new BufferedReader(new FileReader(in));
+		//Sufficient space for the max amount of chars allowed per packet
+		StringBuilder sb = new StringBuilder(PACKETSIZE); 
+		
+		String[] chunks = new String[5];
+		String line;
+		int linesRead = 0;
+		int i = 0;
+		while((line = reader.readLine()) != null){
+			linesRead+=1;
+			//System.out.println(line + ": " + (i*2000 + linesRead));//TODO: Remove print test
+			sb.append(line.toLowerCase() + ",");
+			
+			if(linesRead == LINES_PER_CHUNK){
+				linesRead = 0;
+				chunks[i] = sb.toString();
+				sb = new StringBuilder(PACKETSIZE);
+				//System.out.println("==========");//TODO: Remove print test
+				i+=1;
+			}
+		}		
+		reader.close();
+		return chunks;
 	}
 
 

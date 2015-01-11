@@ -31,48 +31,38 @@ public class Server extends Node {
 			terminal.println("Received packet");
 			
 			PacketContent content= PacketContent.fromDatagramPacket(packet);
-			String gay = (content.toString());
-			String nameToFind="";
-			char[] homo = gay.toCharArray();
-			/*int c=0;
-			while(homo[c]!='@')
-			{
-				nameToFind+=homo[c];
-				homo[c]='!';
-				c++;
-			}
-			terminal.println(nameToFind);
-			if(gay.contains(nameToFind))
-			{
-				terminal.println("noice");
-			}
-			else
-			{
-				terminal.println("not noice");
-			}*/
-			if(gay.contains("john smith"))
-			{
-				terminal.println("hahaha");
-			}
-			else
-			{
-				terminal.println("nope");
-			}
 			
-			System.out.println(gay);
-				
-		
-			if (content.getType()==PacketContent.FILEINFO) {
-				terminal.println("File name: " + ((FileInfoContent)content).getFileName());
-				terminal.println("File size: " + ((FileInfoContent)content).getFileSize());
-				
+			if(content.getType()==PacketContent.FILEINFO){
+				String namesList = content.toString();
+				System.out.println(namesList);
+				String name = ((FileInfoContent)content).getName();
+				System.out.println(name);
+				terminal.println("Finding name: " + name);
+				boolean nameFound;
+				nameFound = findName(namesList, name);
+				if(nameFound == true){
+					System.out.println(name + " found!");
+				}
+				else if(nameFound == false){
+					System.out.println(name + " not found");
+				}				
+				//Receipt acknowledgment
+				//TODO: Add ack packet of whether or not the name was found
 				DatagramPacket response;
-				response= new AckPacketContent("OK - Received this").toDatagramPacket();
+				response = new AckPacketContent("OK - Received this").toDatagramPacket();
 				response.setSocketAddress(packet.getSocketAddress());
 				socket.send(response);
 			}
 		}
 		catch(Exception e) {e.printStackTrace();}
+	}
+	
+	public boolean findName(String namesList, String nameToFind){
+		String tokenizedName = nameToFind + ",";
+		if(namesList.contains(tokenizedName))
+			return true;
+		else
+			return false;
 	}
 
 	
@@ -86,7 +76,7 @@ public class Server extends Node {
 	 */
 	public static void main(String[] args) {
 		try {					
-			Terminal terminal= new Terminal("Server");
+			Terminal terminal= new Terminal("Worker");
 			(new Server(terminal, DEFAULT_PORT)).start();
 			terminal.println("Program completed");
 		} catch(java.lang.Exception e) {e.printStackTrace();}
