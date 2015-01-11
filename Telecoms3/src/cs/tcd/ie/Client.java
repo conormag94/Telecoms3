@@ -25,8 +25,8 @@ public class Client extends Node {
 	static final int DEFAULT_DST_PORT = 50001;
 	static final String DEFAULT_DST_NODE = "localhost";	
 	
-	static final int LINES_PER_CHUNK = 5000;
-	static final int CHAR_LIMIT = 70;
+	static final int LINES_PER_CHUNK = 2000;
+	static final int CHAR_LIMIT = 50;
 	Terminal terminal;
 	InetSocketAddress dstAddress;
 	
@@ -58,39 +58,38 @@ public class Client extends Node {
 	public String[] splitFile(File inputFile) throws IOException{
 		File in = inputFile;
 		BufferedReader reader = new BufferedReader(new FileReader(in));
-		
-		String[] parts = null;
-		
-		String[] chunks = null;
-		String line = reader.readLine();
-		//Big enough to hold 5000 lines (LINES_PER_CHUNK) of 70 chars each (CHAR_LIMIT)
+		//Big enough to hold 5000 lines (LINES_PER_CHUNK) of 50 chars each (CHAR_LIMIT)
+		//just in case of very long names
 		StringBuilder sb = new StringBuilder(LINES_PER_CHUNK * CHAR_LIMIT); 
 		
-		while(line != null){
+		String[] chunks = new String[5];
+		String line;
+		int linesRead = 0;
+		int i = 0;
+		while((line = reader.readLine()) != null){
+			linesRead+=1;
+			System.out.println(line + ": " + (i*2000 + linesRead));
 			
-		}
-		reader.close();
-		return parts;
-		/*
-		String[] chunks = new String[10];
-		
-		for(int i = 0; i < 10; i++){
-			String info = "";
+			sb.append(line.toLowerCase() + ",");
 			
-			for(int j = 0; j < 100; j++){
-				info += (char)buffer[j];
+			if(linesRead == LINES_PER_CHUNK){
+				linesRead = 0;
+				chunks[i] = sb.toString();
+				sb = new StringBuilder(LINES_PER_CHUNK * CHAR_LIMIT);
+				System.out.println("==========");
+				i+=1;
 			}
-			
-			chunks[i] = info;
 		}
-			
+		
+		reader.close();
 		return chunks;
-		*/
+
 	}
 	
 	/**
 	 * Sender Method
-	 * 
+	 * TODO: Make the split chunks into actual packets and send
+	 * @Author: Mag
 	 */
 	public synchronized void start() throws Exception {
 		String fname;
@@ -112,32 +111,7 @@ public class Client extends Node {
 			file= new File(fname);	
 			String[] chunks = splitFile(file);
 			// Reserve buffer for length of file and read file
-			reader = new BufferedReader(new FileReader(file));
-			
-			int numOfLines =0;
-			String line = reader.readLine();
-			while (line != null){
-				numOfLines++;
-				line = reader.readLine();
-			}
-			reader = new BufferedReader(new FileReader(file));
-			line = reader.readLine();
 
-			//String[] chunks = new String[numOfLines/10];
-			
-			String testString = "";
-			int count = 0;
-			while (line != null && count < 10){
-				System.out.println(line);
-				testString += line + ",";
-				line = reader.readLine();
-				count++;
-			}
-			System.out.println(testString);
-			
-			if(testString.contains("chris smith,"))
-				System.out.print("Dicks");		
-			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
