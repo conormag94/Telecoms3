@@ -2,6 +2,7 @@ package cs.tcd.ie;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.*;
 
 import tcdIO.Terminal;
 
@@ -16,7 +17,9 @@ public class Worker extends Node {
 	Worker(Terminal terminal, int port) {
 		try {
 			this.terminal= terminal;
-			socket= new DatagramSocket(port);
+			//Constructs a datagram socket and binds it to any available port on the local host machine.
+			socket = new DatagramSocket();
+			terminal.println("My port: " + socket.getLocalPort());
 			listener.go();
 		}
 		catch(java.lang.Exception e) {e.printStackTrace();}
@@ -36,24 +39,30 @@ public class Worker extends Node {
 				String namesList = content.toString();
 
 				String name = ((FileInfoContent)content).getName();
-
-				terminal.println("Finding name: " + name);
-				boolean nameFound;
-				nameFound = findName(namesList, name);
-				if(nameFound == true){
-					System.out.println(name + " found!");
-					terminal.println(name + " found!");
-				}
-				else if(nameFound == false){
-					System.out.println(name + " not found");
-					terminal.println(name + " not found");
-				}				
-				//Receipt acknowledgment
-				//TODO: Add ack packet of whether or not the name was found
 				DatagramPacket response;
 				response = new AckPacketContent("Finding name: " + name).toDatagramPacket();
 				response.setSocketAddress(packet.getSocketAddress());
 				socket.send(response);
+
+				terminal.println("Finding name: " + name);
+				boolean nameFound;
+				nameFound = findName(namesList, name);
+				String resultString = "";
+				if(nameFound){
+					System.out.println(name + " found!");
+					terminal.println("***I FOUND " + name +"!***");
+					resultString = "Found";
+				}
+				else{
+					System.out.println(name + " not found");
+					terminal.println(name + " not found");
+					resultString = "Not Found";
+				}				
+
+				DatagramPacket result;
+				result = new AckPacketContent(resultString).toDatagramPacket();
+				result.setSocketAddress(packet.getSocketAddress());
+				socket.send(result);
 			}
 		}
 		catch(Exception e) {e.printStackTrace();}
@@ -67,6 +76,10 @@ public class Worker extends Node {
 
 	public synchronized void start() throws Exception {
 		terminal.println("Waiting for contact");
+		DatagramPacket connectRequest = new AckPacketContent("Connect Me").toDatagramPacket();
+		connectRequest.setSocketAddress(new InetSocketAddress("localhost", 50000));
+		socket.send(connectRequest);
+		terminal.println("Connection Request sent");
 		this.wait();
 	}
 

@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.io.*;
+import java.net.*;
 
 import tcdIO.*;
 
@@ -22,9 +23,16 @@ public class Coordinator extends Node {
 	static final int DEFAULT_DST_PORT = 50001;
 	static final String DEFAULT_DST_NODE = "localhost";	
 	
-	static final int LINES_PER_CHUNK = 2000;
+	static final int LINES_PER_CHUNK = 2500;
 	Terminal terminal;
 	InetSocketAddress dstAddress;
+	
+	SocketAddress[] workerAddresses = new SocketAddress[50];;
+	int workersConnected = 0;
+	boolean connecting = true;
+	boolean sending = true;
+	
+	boolean nameFound = false;
 	
 	/**
 	 * Constructor
@@ -47,77 +55,103 @@ public class Coordinator extends Node {
 	 */
 	public void onReceipt(DatagramPacket packet) {
 		PacketContent content= PacketContent.fromDatagramPacket(packet);
+		if(content.toString().equals("ACK:Connect Me")){
+			SocketAddress receivedAddress = packet.getSocketAddress();
+			workerAddresses[workersConnected] = receivedAddress;
+			workersConnected+=1;
+			terminal.println("Connected Worker: " + receivedAddress);
+			
+			synchronized(terminal){
+				if(workersConnected < workerAddresses.length)
+					connecting = true;
+			}
+		}
 		
-		terminal.println(content.toString());
+		else if(content.toString().equals("ACK:Found")){
+			nameFound = true;
+			sending = false;
+		}
+		
+		else if(content.toString().equals("ACK:Not Found")){
+			nameFound = false;
+		}
 	}
 	
 	/**
 	 * Sender Method
-	 * TODO: Multiple packets/servers
-	 * @Author: Conor Maguire
+	 * 
 	 */
 	public synchronized void start() throws Exception {
-		String fname, testName;
-		String[] chunks = null;
 		
+		//Awaits inital connection requests from workers
+		while(connecting){
+			connecting = false;
+			synchronized(terminal){
+				terminal.println("Waiting for workers to connect...");
+				terminal.wait(5000);
+			}
+		}	
+		terminal.println(workersConnected + " workers connected");
+		
+		//if no workers connected, ends the program
+		if(workersConnected == 0)
+			return;
+
+		String fname, testName;
 		fname= terminal.readString("Name of file: ");
 		testName = terminal.readString("Name to find: ");
 		File file = null;
-		
+
 		try{
 			file= new File(fname);	
-			chunks = splitFile(file);
+			splitFile(file, testName);
 		}catch(Exception e){
 			e.printStackTrace();
+			return;
 		}
-		
-		FileInfoContent fcontent = new FileInfoContent(chunks[0], testName);
-		DatagramPacket packet;
-		terminal.println("Sending packet:");
-		packet = fcontent.toDatagramPacket();
-		packet.setSocketAddress(dstAddress);
-		socket.send(packet);
-		terminal.println("Packet sent");
+		String result = (nameFound) ? "Name Found: " + testName : "Name Not Found: " + testName;
+		terminal.println("***" + result + "**");
+		System.out.println("**" + result + "**");
 		
 		this.wait();
 	}
 	
 	/** 
-	 * @param  inputFile - Text File to split (names-short.txt)
-	 * @return chunks    - String array containing file split into 5 chunks
-	 * @throws IOException
+	 * splitFile method
+	 * ================
+	 * Splits up the text file into chunks of 2500 lines each
+	 * and sends out the chunks to the next available worker as they are made available
 	 * 
-	 * NOTE:
-	 * ====
-	 * We separate the names by commas in the chunks to avoid partial matches
-	 * If we searched for "john williams" and the name "john williamson" was there,
-	 * this would give us a false match as "john williamson" contains "john williams"
-	 * So "john williamson" becomes "john williamson,"
-	 * and "john williams" becomes "john williams,".
-	 * This fixes the problem
+	 * @param  inputFile - Text File to split (names-short.txt)
+	 *         testName  - The name to find in the text
+	 * @throws IOException
+
 	 */
-	public String[] splitFile(File inputFile) throws IOException{
+	public void splitFile(File inputFile, String testName) throws IOException{
 		File in = inputFile;
 		BufferedReader reader = new BufferedReader(new FileReader(in));
-		StringBuilder sb = new StringBuilder(PACKETSIZE); 
 		
-		String[] chunks = new String[5];
 		String line;
 		int linesRead = 0;
 		int i = 0;
-		while((line = reader.readLine()) != null){
+		String current = "";
+		while( ((line = reader.readLine()) != null) && (sending == true) ){
 			linesRead+=1;
-			sb.append(line.toLowerCase() + ",");
+			current += line + ",";
 			
-			if(linesRead == LINES_PER_CHUNK){
-				linesRead = 0;
-				chunks[i] = sb.toString();
-				sb = new StringBuilder(PACKETSIZE);
+			if(linesRead == LINES_PER_CHUNK && sending==true){
+				linesRead = 0;				
+				DatagramPacket work = new FileInfoContent(current, testName).toDatagramPacket();
+				work.setSocketAddress(workerAddresses[i%workersConnected]);
+				socket.send(work);
+				terminal.println("Packet " + i + " sent");
+
+				current = "";
 				i+=1;
 			}
 		}		
 		reader.close();
-		return chunks;
+
 	}
 
 	/**

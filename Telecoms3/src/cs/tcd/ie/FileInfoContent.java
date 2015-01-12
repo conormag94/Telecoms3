@@ -5,10 +5,10 @@ import java.io.ObjectOutputStream;
 
 /**
  * Class for packet content that represents file information
- * TODO: Once class is completed, delete stefan's old commented out code
+ * 
  */
 public class FileInfoContent extends PacketContent {
-	//TODO: Maybe use filename variable to identify big or small file
+
 	String filename;
 	int size;
 	
@@ -27,13 +27,7 @@ public class FileInfoContent extends PacketContent {
 		this.name = name;
 		
 	}
-	/*
-	FileInfoContent(String filename, int size) {
-		type= FILEINFO;
-		this.filename = filename;
-		this.size= size;
-	}
-	*/
+
 	/**
 	 * Constructs an object out of a datagram packet.
 	 * @param packet Packet that contains information about a file.
@@ -45,16 +39,6 @@ public class FileInfoContent extends PacketContent {
 			name = oin.readUTF();
 		}catch(Exception e){e.printStackTrace();}
 	}
-	/*
-	protected FileInfoContent(ObjectInputStream oin) {
-		try {
-			type= FILEINFO;
-			filename= oin.readUTF();
-			size= oin.readInt();
-		} 
-		catch(Exception e) {e.printStackTrace();}
-	}
-	*/
 	
 	/**
 	 * Writes the content into an ObjectOutputStream
@@ -67,16 +51,6 @@ public class FileInfoContent extends PacketContent {
 		}
 		catch(Exception e) {e.printStackTrace();}
 	}
-
-	/*
-	protected void toObjectOutputStream(ObjectOutputStream oout) {
-		try {
-			oout.writeUTF(filename);
-			oout.writeInt(size);
-		}
-		catch(Exception e) {e.printStackTrace();}
-	}
-	*/
 	
 	public String getData(){
 		return data;
